@@ -22,12 +22,12 @@
 Выполните команды от имени администратора:
 
 ```cmd
-bcdedit.exe -set loadoptions ENABLE_INTEGRITY_CHECKS
+bcdedit.exe -set loadoptions DISABLE_INTEGRITY_CHECKS
 bcdedit.exe -set TESTSIGNING ON
-bcdedit.exe -set NOINTEGRITYCHECKS OFF
+bcdedit.exe -set NOINTEGRITYCHECKS ON
 ```
 
-**Перезагрузите компьютер**. (shutdown.exe /r /o /f /t 00) После перезагрузки в правом нижнем углу появится водяной знак "Test Mode".
+**Перезагрузите компьютер**. (shutdown.exe /r /o /f /t 00) или (Shutdown -f -r -t 0) После перезагрузки в правом нижнем углу появится водяной знак "Test Mode".
 
 > 📖 Подробнее: [Отключение проверки цифровой подписи драйвера](https://winitpro.ru/index.php/2011/11/08/kak-otklyuchit-proverku-cifrovoj-podpisi-drajvera-v-windows-7/)
 
