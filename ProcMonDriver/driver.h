@@ -9,6 +9,9 @@
 #include <ntddk.h>
 #include "../common/shared.h"
 #include "buffer.h"
+#include "hash.h"
+#include "enum_drivers.h"
+#include "enum_devices.h"
 
 /* Имя устройства в пространстве имён ядра */
 #define DEVICE_NAME     L"\\Device\\ProcMon"

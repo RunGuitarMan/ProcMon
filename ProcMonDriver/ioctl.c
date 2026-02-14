@@ -13,6 +13,8 @@
  */
 
 #include "driver.h"
+#include "enum_drivers.h"
+#include "enum_devices.h"
 
 /*
  * DispatchCreateClose — обработчик открытия/закрытия устройства.
@@ -123,6 +125,67 @@ NTSTATUS DispatchDeviceControl(
 
         status = STATUS_SUCCESS;
         break;
+
+    case IOCTL_PROCMON_GET_INSTALLED_DRIVERS:
+    case IOCTL_PROCMON_GET_LOADED_DRIVERS:
+    {
+        PDRIVER_INFO_RESPONSE drvResponse;
+        ULONG drvMaxEntries;
+        ULONG drvTotal = 0, drvReturned = 0;
+
+        /* Минимальный буфер: TotalCount + ReturnedCount */
+        if (outputLength < (ULONG)FIELD_OFFSET(DRIVER_INFO_RESPONSE, Drivers)) {
+            status = STATUS_BUFFER_TOO_SMALL;
+            break;
+        }
+
+        drvResponse = (PDRIVER_INFO_RESPONSE)Irp->AssociatedIrp.SystemBuffer;
+        drvMaxEntries = (outputLength - (ULONG)FIELD_OFFSET(DRIVER_INFO_RESPONSE, Drivers))
+                        / sizeof(DRIVER_INFO);
+
+        if (ioctlCode == IOCTL_PROCMON_GET_INSTALLED_DRIVERS) {
+            status = EnumerateInstalledDrivers(drvResponse->Drivers, drvMaxEntries,
+                                               &drvTotal, &drvReturned);
+        } else {
+            status = EnumerateLoadedDrivers(drvResponse->Drivers, drvMaxEntries,
+                                            &drvTotal, &drvReturned);
+        }
+
+        if (NT_SUCCESS(status)) {
+            drvResponse->TotalCount = drvTotal;
+            drvResponse->ReturnedCount = drvReturned;
+            bytesReturned = FIELD_OFFSET(DRIVER_INFO_RESPONSE, Drivers)
+                            + drvReturned * sizeof(DRIVER_INFO);
+        }
+        break;
+    }
+
+    case IOCTL_PROCMON_GET_DEVICES:
+    {
+        PDEVICE_INFO_RESPONSE devResponse;
+        ULONG devMaxEntries;
+        ULONG devTotal = 0, devReturned = 0;
+
+        if (outputLength < (ULONG)FIELD_OFFSET(DEVICE_INFO_RESPONSE, Devices)) {
+            status = STATUS_BUFFER_TOO_SMALL;
+            break;
+        }
+
+        devResponse = (PDEVICE_INFO_RESPONSE)Irp->AssociatedIrp.SystemBuffer;
+        devMaxEntries = (outputLength - (ULONG)FIELD_OFFSET(DEVICE_INFO_RESPONSE, Devices))
+                        / sizeof(DEVICE_INFO);
+
+        status = EnumerateDevices(devResponse->Devices, devMaxEntries,
+                                  &devTotal, &devReturned);
+
+        if (NT_SUCCESS(status)) {
+            devResponse->TotalCount = devTotal;
+            devResponse->ReturnedCount = devReturned;
+            bytesReturned = FIELD_OFFSET(DEVICE_INFO_RESPONSE, Devices)
+                            + devReturned * sizeof(DEVICE_INFO);
+        }
+        break;
+    }
 
     default:
         /* Неизвестный IOCTL-код */

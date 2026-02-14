@@ -84,12 +84,22 @@ VOID ProcessNotifyCallback(
                 /* Если конвертация не удалась — ставим заглушку */
                 RtlCopyMemory(event.ImageName, "<unknown>", 10);
             }
+
+            /* Вычисляем MD5-хеш исполняемого файла */
+            status = ComputeFileHash(CreateInfo->ImageFileName, event.FileHash);
+            if (NT_SUCCESS(status)) {
+                event.HashValid = TRUE;
+            } else {
+                event.HashValid = FALSE;
+            }
         } else {
             RtlCopyMemory(event.ImageName, "<no name>", 10);
+            event.HashValid = FALSE;
         }
 
-        DbgPrint("[ProcMon] CREATE: PID=%lu PPID=%lu Image=%s\n",
-                 event.ProcessId, event.ParentProcessId, event.ImageName);
+        DbgPrint("[ProcMon] CREATE: PID=%lu PPID=%lu Image=%s Hash=%s\n",
+                 event.ProcessId, event.ParentProcessId, event.ImageName,
+                 event.HashValid ? "OK" : "N/A");
 
     } else {
         /* === Процесс завершается === */

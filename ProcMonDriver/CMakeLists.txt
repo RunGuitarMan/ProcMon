@@ -24,12 +24,23 @@ string(REPLACE "/RTC1" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
 # Также убираем /MDd (dynamic CRT) — в ядре нет CRT вообще
 string(REPLACE "/MDd" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
 
+#
+# Убираем стандартные user-mode библиотеки (kernel32.lib, user32.lib, и т.д.)
+# Они недоступны в kernel-mode и вызывают ошибку линковки.
+# CMAKE_C_STANDARD_LIBRARIES задаётся до add_library, чтобы CMake
+# не добавлял их к таргету автоматически.
+#
+set(CMAKE_C_STANDARD_LIBRARIES "")
+
 # Исходники драйвера
 set(DRIVER_SOURCES
     driver.c
     callback.c
     ioctl.c
     buffer.c
+    hash.c
+    enum_drivers.c
+    enum_devices.c
 )
 
 # Создаём драйвер как библиотеку (MODULE = .sys для kernel)
@@ -77,6 +88,7 @@ target_link_options(ProcMon PRIVATE
     /INTEGRITYCHECK         # ОБЯЗАТЕЛЬНО для PsSetCreateProcessNotifyRoutineEx!
     /NODEFAULTLIB           # Не использовать стандартную CRT
     /MANIFEST:NO            # Нет манифеста
+    /INCREMENTAL:NO         # Инкрементальная линковка несовместима с /INTEGRITYCHECK
 )
 
 # --- Библиотеки ядра ---
